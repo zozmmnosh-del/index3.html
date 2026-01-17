@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رافع التطبيقات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: #333;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 { margin-top: 0; color: #444; }
+
+        .upload-area {
+            border: 2px dashed #a2a2a2;
+            padding: 20px;
+            border-radius: 10px;
+            background: #fdfdfd;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .icon { font-size: 50px; display: block; margin-bottom: 10px; }
+        .file-name { font-weight: bold; word-break: break-all; color: #555; }
+
+        input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        /* شريط التقدم الحقيقي */
+        .progress-container {
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 5px;
+            height: 8px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #28a745;
+            transition: width 0.2s;
+        }
+        .percent-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            display: none;
+        }
+
+        button {
+            background: #764ba2;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:disabled { background: #ccc; }
+
+        .result {
+            margin-top: 20px;
+            display: none;
+            text-align: right;
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .result input {
+            width: 95%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            direction: ltr;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>رفع تطبيق/ملف</h2>
+    
+    <div class="upload-area">
+        <span class="icon">☁️</span>
+        <div class="file-name" id="fileName">اضغط هنا لاختيار الملف</div>
+        <input type="file" id="fileInput">
+    </div>
+
+    <!-- شريط التقدم -->
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="percent-text" id="percentText">0%</div>
+
+    <button id="uploadBtn" onclick="uploadFile()" disabled>رفع الملف</button>
+
+    <!-- النتيجة -->
+    <div class="result" id="resultArea">
+        <label>✅ تم الرفع! الرابط:</label>
+        <input type="text" id="linkInput" readonly onclick="this.select()">
+        <button style="margin-top:5px; background:#333; font-size:12px; padding:5px;" onclick="copyLink()">نسخ الرابط</button>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const percentText = document.getElementById('percentText');
+    const resultArea = document.getElementById('resultArea');
+    const linkInput = document.getElementById('linkInput');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            fileName.innerText = fileInput.files[0].name;
+            uploadBtn.disabled = false;
+            resultArea.style.display = 'none';
+            progressBar.style.width = '0%';
+        }
+    });
+
+    function uploadFile() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // إظهار شريط التقدم
+        progressContainer.style.display = 'block';
+        percentText.style.display = 'block';
+        uploadBtn.disabled = true;
+        uploadBtn.innerText = "جاري الرفع...";
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // استخدام XMLHttpRequest للحصول على تقدم الرفع الحقيقي
+        const xhr = new XMLHttpRequest();
+        
+        // استهداف file.io (يمكنك استبداله بـ https://tmpfiles.org/api/v1/upload إذا توفر لديك مفتاح API)
+        xhr.open('POST', 'https://file.io/?expires=1d', true);
+
+        // مراقبة التقدم
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                percentText.innerText = percent + '%';
+            }
+        };
+
+        // عند اكتمال الرفع والرد
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showSuccess(response.link);
+                    } else {
+                        alert('فشل الرفع: ' + (response.message || 'خطأ غير معروف'));
+                        resetUI();
+                    }
+                } catch (e) {
+                    alert('حدث خطأ في قراءة الرد من السيرفر.');
+                    resetUI();
+                }
+            } else {
+                alert('حدث خطأ في الاتصال: ' + xhr.status);
+                resetUI();
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('فشل الاتصال بالإنترنت أو تم حظر الطلب. تأكد من اتصالك.');
+            resetUI();
+        };
+
+        xhr.send(formData);
+    }
+
+    function showSuccess(link) {
+        uploadBtn.innerText = "تم الرفع بنجاح";
+        resultArea.style.display = 'block';
+        linkInput.value = link;
+        percentText.innerText = "تم الاكمال!";
+    }
+
+    function resetUI() {
+        uploadBtn.disabled = false;
+        uploadBtn.innerText = "رفع الملف";
+        progressContainer.style.display = 'none';
+        percentText.style.display = 'none';
+    }
+
+    function copyLink() {
+        linkInput.select();
+        document.execCommand("copy");
+        alert("تم النسخ");
+    }
+</script>
+
+</body>
+</html>
