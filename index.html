@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رافع التطبيقات المضمون</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: #333;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 { margin-top: 0; color: #1e3c72; }
+
+        .upload-area {
+            border: 2px dashed #2a5298;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f0f4ff;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        
+        /* تنسيق زر اختيار الملف */
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* زر الرفع */
+        .submit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            width: 100%;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+            transition: 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-top: 20px;
+            border: 1px solid #ffeeba;
+            text-align: right;
+        }
+
+        .alert-box strong { display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>رفع APK (بدون أخطاء)</h2>
+    
+    <!-- 
+        هنا السر:
+        استخدام form action مباشرة إلى السيرفر
+        target="_blank" يفتح النتيجة في نافذة جديدة لتجنب الحظر
+    -->
+    <form action="https://file.io" method="POST" enctype="multipart/form-data" target="_blank">
+        
+        <div class="upload-area">
+            <span class="icon">🚀</span>
+            <label style="display:block; margin-bottom:10px; font-weight:bold;">اختر التطبيق أو الملف:</label>
+            <input type="file" name="file" required>
+            <!-- تحديد مدة صلاحية الرابط (يوم واحد) -->
+            <input type="hidden" name="expires" value="1d">
+        </div>
+
+        <button type="submit" class="submit-btn">رفع والحصول على الرابط</button>
+
+    </form>
+
+    <div class="alert-box">
+        <strong>⚠️ كيف تحصل على الرابط؟</strong>
+        بسبب حماية GitHub، عند الضغط على "رفع":
+        <br>1. ستفتح <b>نافذة جديدة</b>.
+        <br>2. انتظر حتى يكتمل الرفع فيها.
+        <br>3. سيظهر لك نص يشبه: <code>{"success":true,"link":"..."}</code>
+        <br>4. انسخ الرابط الموجود بجانب كلمة <b>link</b>.
+    </div>
+</div>
+
+</body>
+</html>
