@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رافع التطبيقات المضمون</title>
+    <title>رفع التطبيق - API Integration</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -17,104 +17,270 @@
         }
 
         .card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             width: 85%;
             max-width: 400px;
             text-align: center;
+            backdrop-filter: blur(10px);
         }
 
-        h2 { margin-top: 0; color: #1e3c72; }
+        h3 { margin-top: 0; color: #4A00E0; }
 
         .upload-area {
-            border: 2px dashed #2a5298;
+            border: 2px dashed #8E2DE2;
             padding: 20px;
-            border-radius: 10px;
-            background: #f0f4ff;
-            margin: 20px 0;
+            border-radius: 12px;
+            background: #f8f9fa;
             position: relative;
+            transition: 0.3s;
+            margin-bottom: 15px;
         }
 
-        .icon { font-size: 40px; display: block; margin-bottom: 10px; }
-        
-        /* تنسيق زر اختيار الملف */
+        .upload-area:hover { background: #eee; }
+
+        .file-info {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #555;
+            word-break: break-all;
+        }
+
         input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        /* شريط التقدم */
+        .progress-wrapper {
+            margin-top: 15px;
+            display: none;
+        }
+        .progress-bg {
+            background: #ddd;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4A00E0, #8E2DE2);
+            transition: width 0.2s;
+        }
+        .progress-text {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #666;
+        }
+
+        button {
+            background: #4A00E0;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
             width: 100%;
-            padding: 10px;
-            background: white;
-            border: 1px solid #ddd;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:disabled { background: #bbb; cursor: not-allowed; }
+
+        .proxy-switch {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: #f0f0f0;
+            padding: 5px;
             border-radius: 5px;
         }
 
-        /* زر الرفع */
-        .submit-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            width: 100%;
-            font-size: 18px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
-            transition: 0.3s;
+        .result-box {
+            margin-top: 15px;
+            display: none;
+            background: #eef;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccd;
         }
-
-        .submit-btn:hover {
-            background: #218838;
-            transform: translateY(-2px);
+        .result-box input {
+            width: 95%;
+            padding: 8px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            text-align: center;
+            font-family: monospace;
+            direction: ltr;
         }
-
-        .alert-box {
-            background: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
+        .copy-btn {
+            background: #333;
+            margin-top: 5px;
+            padding: 6px;
             font-size: 13px;
-            margin-top: 20px;
-            border: 1px solid #ffeeba;
-            text-align: right;
         }
 
-        .alert-box strong { display: block; margin-bottom: 5px; }
+        .error-msg {
+            color: red;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>رفع APK (بدون أخطاء)</h2>
+    <h3>رفع APK عبر API</h3>
     
-    <!-- 
-        هنا السر:
-        استخدام form action مباشرة إلى السيرفر
-        target="_blank" يفتح النتيجة في نافذة جديدة لتجنب الحظر
-    -->
-    <form action="https://file.io" method="POST" enctype="multipart/form-data" target="_blank">
-        
-        <div class="upload-area">
-            <span class="icon">🚀</span>
-            <label style="display:block; margin-bottom:10px; font-weight:bold;">اختر التطبيق أو الملف:</label>
-            <input type="file" name="file" required>
-            <!-- تحديد مدة صلاحية الرابط (يوم واحد) -->
-            <input type="hidden" name="expires" value="1d">
-        </div>
+    <div class="upload-area">
+        <div style="font-size: 40px;">📂</div>
+        <div class="file-info" id="fileName">اضغط لاختيار التطبيق</div>
+        <input type="file" id="fileInput">
+    </div>
 
-        <button type="submit" class="submit-btn">رفع والحصول على الرابط</button>
+    <!-- زر خيار البروكسي لحل مشكلة الحظر -->
+    <div class="proxy-switch">
+        <input type="checkbox" id="proxyToggle">
+        <label for="proxyToggle">تفعيل وضع Proxy (فعله إذا فشل الرفع)</label>
+    </div>
 
-    </form>
+    <div class="progress-wrapper" id="progressWrapper">
+        <div class="progress-bg"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">0%</div>
+    </div>
 
-    <div class="alert-box">
-        <strong>⚠️ كيف تحصل على الرابط؟</strong>
-        بسبب حماية GitHub، عند الضغط على "رفع":
-        <br>1. ستفتح <b>نافذة جديدة</b>.
-        <br>2. انتظر حتى يكتمل الرفع فيها.
-        <br>3. سيظهر لك نص يشبه: <code>{"success":true,"link":"..."}</code>
-        <br>4. انسخ الرابط الموجود بجانب كلمة <b>link</b>.
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button id="uploadBtn" onclick="startUpload()" disabled>بدء الرفع</button>
+
+    <div class="result-box" id="resultBox">
+        <p style="margin:0 0 5px 0; font-weight:bold;">✅ تم الرفع:</p>
+        <input type="text" id="linkOutput" readonly onclick="this.select()">
+        <button class="copy-btn" onclick="copyLink()">نسخ الرابط</button>
     </div>
 </div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressWrapper = document.getElementById('progressWrapper');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const resultBox = document.getElementById('resultBox');
+    const linkOutput = document.getElementById('linkOutput');
+    const errorMsg = document.getElementById('errorMsg');
+    const proxyToggle = document.getElementById('proxyToggle');
+
+    fileInput.addEventListener('change', () => {
+        if(fileInput.files.length > 0){
+            fileName.innerText = fileInput.files[0].name;
+            uploadBtn.disabled = false;
+            // تصفير الواجهة
+            resultBox.style.display = 'none';
+            errorMsg.style.display = 'none';
+            progressBar.style.width = '0%';
+        }
+    });
+
+    function startUpload() {
+        const file = fileInput.files[0];
+        if(!file) return;
+
+        // تجهيز الواجهة
+        uploadBtn.disabled = true;
+        uploadBtn.innerText = "جاري الاتصال...";
+        progressWrapper.style.display = 'block';
+        errorMsg.style.display = 'none';
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        // إضافة مدة الصلاحية حسب توثيق API
+        formData.append('expires', '1d'); 
+
+        const xhr = new XMLHttpRequest();
+        
+        // الرابط الأساسي لـ file.io
+        let uploadUrl = 'https://file.io';
+
+        // إذا تم تفعيل خيار البروكسي، نستخدم وسيط لكسر حماية CORS
+        if(proxyToggle.checked) {
+            // نستخدم corsproxy.io كوسيط
+            uploadUrl = 'https://corsproxy.io/?' + encodeURIComponent(uploadUrl);
+        }
+
+        xhr.open('POST', uploadUrl, true);
+        
+        // إضافة Header لقبول JSON كما في التوثيق
+        xhr.setRequestHeader('Accept', 'application/json');
+
+        // متابعة التقدم
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressText.innerText = percent + '%';
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200 || xhr.status === 201) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if(response.success) {
+                        showSuccess(response.link);
+                    } else {
+                        showError("فشل الرفع: " + (response.message || "خطأ غير معروف"));
+                    }
+                } catch(e) {
+                    // في حالة البروكسي أحياناً الرد يكون نصياً
+                    showError("خطأ في قراءة الرد. حاول بدون بروكسي أو جرب ملفاً أصغر.");
+                }
+            } else {
+                showError("فشل الاتصال (" + xhr.status + "). جرب تفعيل/إلغاء وضع البروكسي.");
+            }
+        };
+
+        xhr.onerror = function() {
+            showError("حدث خطأ في الشبكة (Blocked). \n نصيحة: فعّل خيار 'وضع Proxy' بالأعلى وحاول مجدداً.");
+        };
+
+        xhr.send(formData);
+    }
+
+    function showSuccess(link) {
+        uploadBtn.innerText = "تم بنجاح!";
+        uploadBtn.disabled = false;
+        resultBox.style.display = 'block';
+        linkOutput.value = link;
+        progressText.innerText = "اكتمل الرفع!";
+    }
+
+    function showError(msg) {
+        uploadBtn.innerText = "حاول مرة أخرى";
+        uploadBtn.disabled = false;
+        errorMsg.innerText = msg;
+        errorMsg.style.display = 'block';
+        progressWrapper.style.display = 'none';
+    }
+
+    function copyLink() {
+        linkOutput.select();
+        document.execCommand("copy");
+        alert("تم النسخ!");
+    }
+</script>
 
 </body>
 </html>
